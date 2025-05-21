@@ -1,16 +1,20 @@
 # Spot the Difference Game
 
-A React-based "Spot the Difference" game where players need to find differences between two similar images.
+A React-based "Spot the Difference" game where players can configure their own puzzles with custom images and difference spots.
 
 ## Features
 
 - Side-by-side image comparison
 - Click detection for differences
 - Score tracking
-- Timer functionality
 - Responsive design (mobile-friendly)
 - Visual feedback for found differences (red circle outline)
 - Game completion message
+- **Configuration screen:**
+  - Upload two images
+  - Add differences by clicking on either image (red circle appears where you click)
+  - Remove differences before starting
+  - Set a custom game title
 
 ## Getting Started
 
@@ -39,37 +43,22 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
-## Game Configuration
+## Configuration Screen
 
-The game is configured through a JSON file located at `src/config/gameConfig.json`. The configuration includes:
-
-- Game title
-- Image paths
-- Difference coordinates (x, y, width, height)
-
-Example configuration:
-```json
-{
-  "gameTitle": "Spot the Difference - Animals",
-  "images": {
-    "image1": "/assets/1.jpg",
-    "image2": "/assets/2.jpg"
-  },
-  "differences": [
-    { "x": 100, "y": 200, "width": 50, "height": 50 },
-    { "x": 300, "y": 150, "width": 40, "height": 40 },
-    { "x": 500, "y": 300, "width": 30, "height": 30 }
-  ]
-}
-```
+When you open the app, you'll see a configuration screen:
+- **Game Title:** Enter a custom title for your game.
+- **Image 1 & Image 2:** Upload two images to compare.
+- **Add Difference:** Enable "Add Difference Mode" and click on either image to add a difference (a red circle will appear where you click).
+- **Remove:** Remove any difference before starting.
+- **Start Game with Current Settings:** Launch the game with your custom configuration.
 
 ## How to Play
 
 1. Look at both images side by side
-2. Click on the differences you spot
+2. Click on the differences you spot (on either image)
 3. Found differences will be highlighted with a red circle outline
 4. Try to find all differences as quickly as possible
-5. Your score and time will be displayed when you complete the game
+5. Your score will be displayed when you complete the game
 
 ## Technologies Used
 
