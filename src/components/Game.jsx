@@ -25,11 +25,36 @@ const GameCard = styled.div`
   flex-direction: column;
   align-items: center;
   text-align: center;
-  // margin: 40px auto;
   @media (max-width: 600px) {
     padding: 8px 2px;
     max-width: 100vw;
     border-radius: 0;
+  }
+`;
+
+const StartScreen = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+`;
+
+const StartButton = styled.button`
+  background: #1976d2;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 40px;
+  margin-top: 32px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.12);
+  transition: background 0.2s, transform 0.2s;
+  &:hover {
+    background: #1256a3;
+    transform: translateY(-2px) scale(1.04);
   }
 `;
 
@@ -49,7 +74,6 @@ const StatusBar = styled.div`
   gap: 18px;
   align-items: center;
   justify-content: center;
-  // margin-bottom: 18px;
   flex-wrap: wrap;
 `;
 
@@ -107,12 +131,17 @@ const ImageWrapper = styled.div`
   }
 `;
 
+const fadeIn = `@keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }`;
+
 const Image = styled.img`
   width: 100%;
   max-width: 500px;
   height: auto;
   object-fit: contain;
   border-radius: 12px;
+  opacity: 0;
+  animation: fadeIn 0.7s ease forwards;
+  animation-delay: 0.2s;
   @media (max-width: 900px) {
     max-width: 95vw;
   }
@@ -120,6 +149,16 @@ const Image = styled.img`
     max-width: 98vw;
     border-radius: 8px;
   }
+  ${fadeIn}
+`;
+
+const popAnim = `
+@keyframes popCircle {
+  0% { transform: scale(0.3); opacity: 0.2; }
+  60% { transform: scale(1.15); opacity: 1; }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
 `;
 
 const Overlay = styled.div`
@@ -129,7 +168,17 @@ const Overlay = styled.div`
   pointer-events: none;
   border-radius: 50%;
   transition: border 0.2s, background 0.2s;
+  animation: popCircle 0.4s cubic-bezier(0.23, 1.12, 0.32, 1) both;
+  ${popAnim}
 `;
+
+const congratsAnim = `
+@keyframes congratsPop {
+  0% { transform: scale(0.7) translate(-50%, -50%); opacity: 0; }
+  60% { transform: scale(1.08) translate(-50%, -50%); opacity: 1; }
+  80% { transform: scale(0.96) translate(-50%, -50%); }
+  100% { transform: scale(1) translate(-50%, -50%); opacity: 1; }
+}`;
 
 const GameComplete = styled.div`
   position: fixed;
@@ -143,10 +192,12 @@ const GameComplete = styled.div`
   text-align: center;
   z-index: 1000;
   border: 2px solid #4caf50;
+  animation: congratsPop 0.5s cubic-bezier(0.23, 1.12, 0.32, 1) both;
   @media (max-width: 600px) {
     padding: 18px 4px;
     border-radius: 8px;
   }
+  ${congratsAnim}
 `;
 
 const CongratsTitle = styled.h2`
@@ -165,10 +216,11 @@ const CongratsText = styled.p`
 export const Game = () => {
   const [gameState, setGameState] = useState(DEFAULT_GAME_STATE);
   const [timer, setTimer] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
 
   useEffect(() => {
     let interval;
-    if (!gameState.isGameComplete && gameState.startTime) {
+    if (gameStarted && !gameState.isGameComplete && gameState.startTime) {
       interval = setInterval(() => {
         setTimer(Math.floor((Date.now() - gameState.startTime) / 1000));
       }, 1000);
@@ -176,14 +228,16 @@ export const Game = () => {
       setTimer(Math.floor((gameState.endTime - gameState.startTime) / 1000));
     }
     return () => clearInterval(interval);
-  }, [gameState.isGameComplete, gameState.startTime, gameState.endTime]);
+  }, [gameStarted, gameState.isGameComplete, gameState.startTime, gameState.endTime]);
 
   useEffect(() => {
-    setGameState(prev => ({
-      ...prev,
-      startTime: Date.now(),
-    }));
-  }, []);
+    if (gameStarted) {
+      setGameState(prev => ({
+        ...prev,
+        startTime: Date.now(),
+      }));
+    }
+  }, [gameStarted]);
 
   const checkDifference = useCallback((x, y, imageIndex) => {
     const imageElement = document.getElementById(`image${imageIndex}`);
@@ -224,9 +278,24 @@ export const Game = () => {
   }, [gameState.foundDifferences]);
 
   const handleImageClick = (e, imageIndex) => {
-    if (gameState.isGameComplete) return;
+    if (!gameStarted || gameState.isGameComplete) return;
     checkDifference(e.clientX, e.clientY, imageIndex);
   };
+
+  if (!gameStarted) {
+    return (
+      <Background>
+        <GameCard>
+          <StartScreen>
+            <Title>{gameConfig.gameTitle}</Title>
+            <StartButton onClick={() => setGameStarted(true)}>
+              Start Game
+            </StartButton>
+          </StartScreen>
+        </GameCard>
+      </Background>
+    );
+  }
 
   return (
     <Background>
