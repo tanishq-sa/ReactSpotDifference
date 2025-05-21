@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { DEFAULT_GAME_STATE } from '../constants/game';
-import gameConfig from '../config/gameConfig.json';
 
 const Background = styled.div`
   min-height: 100vh;
@@ -213,7 +212,47 @@ const CongratsText = styled.p`
   margin-bottom: 8px;
 `;
 
-export const Game = () => {
+const Button = styled.button`
+  background: #1976d2;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.12);
+  transition: background 0.2s, transform 0.2s;
+  &:hover {
+    background: #1256a3;
+    transform: translateY(-2px) scale(1.04);
+  }
+`;
+
+const FileInputLabel = styled.label`
+  display: inline-block;
+  background: #1976d2;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 10px 22px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
+  transition: background 0.2s, transform 0.2s;
+  &:hover {
+    background: #1256a3;
+    transform: translateY(-2px) scale(1.04);
+  }
+`;
+
+const HiddenInput = styled.input`
+  display: none;
+`;
+
+export const Game = ({ config, onConfigure }) => {
   const [gameState, setGameState] = useState(DEFAULT_GAME_STATE);
   const [timer, setTimer] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
@@ -253,9 +292,8 @@ export const Game = () => {
     const originalX = relativeX / scaleX;
     const originalY = relativeY / scaleY;
 
-    gameConfig.differences.forEach((diff, index) => {
+    config.differences.forEach((diff, index) => {
       if (gameState.foundDifferences.includes(index)) return;
-
       if (
         originalX >= diff.x - Math.max(diff.width, diff.height) / 2 &&
         originalX <= diff.x + Math.max(diff.width, diff.height) / 2 &&
@@ -264,7 +302,7 @@ export const Game = () => {
       ) {
         setGameState(prev => {
           const newFoundDifferences = [...prev.foundDifferences, index];
-          const isComplete = newFoundDifferences.length === gameConfig.differences.length;
+          const isComplete = newFoundDifferences.length === config.differences.length;
           return {
             ...prev,
             foundDifferences: newFoundDifferences,
@@ -275,7 +313,7 @@ export const Game = () => {
         });
       }
     });
-  }, [gameState.foundDifferences]);
+  }, [gameState.foundDifferences, config.differences]);
 
   const handleImageClick = (e, imageIndex) => {
     if (!gameStarted || gameState.isGameComplete) return;
@@ -287,10 +325,13 @@ export const Game = () => {
       <Background>
         <GameCard>
           <StartScreen>
-            <Title>{gameConfig.gameTitle}</Title>
+            <Title>{config.gameTitle}</Title>
             <StartButton onClick={() => setGameStarted(true)}>
               Start Game
             </StartButton>
+            <Button onClick={onConfigure} style={{ marginTop: 24 }}>
+              Configure
+            </Button>
           </StartScreen>
         </GameCard>
       </Background>
@@ -300,14 +341,17 @@ export const Game = () => {
   return (
     <Background>
       <GameCard>
-        <Title>{gameConfig.gameTitle}</Title>
+        <Title>{config.gameTitle}</Title>
         <StatusBar>
           <ScoreDisplay>
-            Score: {gameState.score} / {gameConfig.differences.length}
+            Score: {gameState.score} / {config.differences.length}
           </ScoreDisplay>
           <TimerDisplay>
             Time: {timer} s
           </TimerDisplay>
+          <Button onClick={onConfigure} style={{ marginLeft: 16 }}>
+            Configure
+          </Button>
         </StatusBar>
         <ImagesContainer>
           {[1, 2].map((imageIndex) => (
@@ -317,33 +361,35 @@ export const Game = () => {
             >
               <Image
                 id={`image${imageIndex}`}
-                src={gameConfig.images[`image${imageIndex}`]}
+                src={URL.createObjectURL(imageIndex === 1 ? config.image1 : config.image2)}
                 alt={`Image ${imageIndex}`}
               />
-              {gameConfig.differences.map((diff, index) => {
-                if (!gameState.foundDifferences.includes(index)) return null;
-                const imageElement = document.getElementById(`image${imageIndex}`);
-                let scaleX = 1, scaleY = 1;
-                if (imageElement) {
-                  scaleX = imageElement.width / imageElement.naturalWidth;
-                  scaleY = imageElement.height / imageElement.naturalHeight;
-                }
-                const diameter = Math.max(diff.width, diff.height);
-                const scaledDiameterX = diameter * scaleX;
-                const scaledDiameterY = diameter * scaleY;
-                return (
-                  <Overlay
-                    key={index}
-                    found={true}
-                    style={{
-                      left: diff.x * scaleX - scaledDiameterX / 2,
-                      top: diff.y * scaleY - scaledDiameterY / 2,
-                      width: scaledDiameterX,
-                      height: scaledDiameterY,
-                    }}
-                  />
-                );
-              })}
+              {config.differences
+                .map((diff, index) => ({ ...diff, index }))
+                .filter(diff => gameState.foundDifferences.includes(diff.index))
+                .map(diff => {
+                  const imageElement = document.getElementById(`image${imageIndex}`);
+                  let scaleX = 1, scaleY = 1;
+                  if (imageElement) {
+                    scaleX = imageElement.width / imageElement.naturalWidth;
+                    scaleY = imageElement.height / imageElement.naturalHeight;
+                  }
+                  const diameter = Math.max(diff.width, diff.height);
+                  const scaledDiameterX = diameter * scaleX;
+                  const scaledDiameterY = diameter * scaleY;
+                  return (
+                    <Overlay
+                      key={diff.index}
+                      found={true}
+                      style={{
+                        left: diff.x * scaleX - scaledDiameterX / 2,
+                        top: diff.y * scaleY - scaledDiameterY / 2,
+                        width: scaledDiameterX,
+                        height: scaledDiameterY,
+                      }}
+                    />
+                  );
+                })}
             </ImageWrapper>
           ))}
         </ImagesContainer>
